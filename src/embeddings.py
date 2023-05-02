@@ -1,13 +1,17 @@
 import openai
 import os
+import sys
 import mysql.connector
 from mysql.connector import Error
 import numpy as np
+import modules.database as db
 
 # Set up OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Connect to the MySQL database
+
+
 def create_connection(host, user, password, database):
     connection = None
     try:
@@ -23,8 +27,9 @@ def create_connection(host, user, password, database):
     return connection
 
 # Fetch all comments from the table
-def fetch_columns(connection):
-    cursor = connection.cursor()
+
+
+def fetch_columns(db: db.MySQLConnection):
     query = """
 SELECT
     t.TABLE_NAME AS table_name,
@@ -40,50 +45,52 @@ WHERE
     c.COLUMN_COMMENT <> ''
     AND t.TABLE_SCHEMA = 'dbreport_test' 
     AND t.TABLE_NAME = 'users';"""
-    cursor.execute(query)
-    columns = cursor.fetchall()
+    columns = db.execute_query(query)
     return columns
 
+
 # Add embedings to embedding table
-def insert_embedding(connection, table_name, column_name, embedding):
-    cursor = connection.cursor()
+def insert_embedding(db: db.MySQLConnection, table_name, column_name, embedding):
     query = """
       INSERT INTO embeddings (
         table_name, column_name, embedding, 
         created_at, updated_at, deleted_at) 
         VALUES (%s, %s, %s, NOW(), NOW(), NULL)
     """
-    cursor.execute(query, (table_name, column_name, str(embedding.tolist())))
-    connection.commit()
+    db.execute_query(query, (table_name, column_name, str(embedding.tolist())))
 
 # Generate embeddings using the text-embedding-ada-002 model
+
+
 def generate_embedding(prompt):
     try:
         response = openai.Embedding.create(
-          input=prompt,
-          model="text-embedding-ada-002"
+            input=prompt,
+            model="text-embedding-ada-002"
         )
         return np.array(response.data[0].embedding)
     except Exception as e:
         print(f"Error generating embedding: {e}")
         return None
 
+
 # Main script
 if __name__ == "__main__":
-    connection = create_connection(
-      host="database",
-      user="root",
-      password="dbreport",
-      database="dbreport_test"
-    )
-    
-    if connection:
-        columns = fetch_columns(connection)
-        for column in columns:
-            table_name, column_name, comment = column
-            embedding = generate_embedding(comment)
-            insert_embedding(connection, table_name, column_name, embedding)
-            print(f"Added embedding for table {table_name} column {column_name}")
+    db = db.MySQLConnection.get_instance()
 
-        # Close the connection
-        connection.close()
+    if not db:
+        sys.exit()
+
+    columns = fetch_columns(db=db)
+    for column in columns:
+        table_name, column_name, comment = column
+        embedding = generate_embedding(comment)
+
+        print('Embedding generated: ', embedding)
+
+        insert_embedding(db, table_name, column_name, embedding)
+        print(
+            f"Just addded embedding for table {table_name} column {column_name}")
+
+    # Close the connection
+    db.close_connection()
