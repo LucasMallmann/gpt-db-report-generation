@@ -14,10 +14,11 @@ DATABASE_USER = os.getenv('DATABASE_USER')
 DATABASE_PASS = os.getenv('DATABASE_PASS')
 DATABASE_DB = os.getenv('DATABASE_DB')
 
+
 class Schema:
     """Generate SQL Schema from MySQL"""
 
-    def __init__(self, schema = DATABASE_DB):
+    def __init__(self, schema=DATABASE_DB):
         """Connect to MySQL database"""
         self.schema = schema
         try:
@@ -39,7 +40,8 @@ class Schema:
 
     def get_tables(self):
         """Get list of tables"""
-        self.cur.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = %s", (self.schema,))
+        self.cur.execute(
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = %s", (self.schema,))
         tables = self.cur.fetchall()
         self.tables = tables
         return tables
@@ -67,7 +69,8 @@ WHERE
 
     def get_columns(self, table):
         """Get list of columns for a table"""
-        self.cur.execute("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", (self.schema, table))
+        self.cur.execute(
+            "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", (self.schema, table))
         columns = self.cur.fetchall()
         return columns
 
@@ -107,20 +110,16 @@ WHERE
             prompt += f'The "{table[0]}" table has columns: '
             json_data[table[0]] = []
             for column in columns:
-                cmnt = ''
-                for comment in comments:
-                    if comment[0] == self.schema and comment[1] == table[0] and comment[2] == column[0]:
-                        cmnt = comment[3]
-                        break
-                if cmnt == '':
+                cmnt = next((comment[3] for comment in comments if comment[0] ==
+                            self.schema and comment[1] == table[0] and comment[2] == column[0]), "")
+                column_data = {
+                    'name': column[0], 'type': column[1], 'comment': cmnt, 'selected': True}
+                json_data[table[0]].append(column_data)
+                if cmnt == "":
                     prompt += f'{column[0]} ({column[1]}), '
                 else:
                     prompt += f'{column[0]} ({column[1]} - {cmnt}), '
-                json_data[table[0]].append({
-                    'name': column[0],
-                    'type': column[1],
-                    'comment': cmnt,
-                    "seleted": True
-                })
-            prompt = prompt[:-2] + '. '
+            if len(columns) > 0:
+                prompt = prompt[:-2] + '. '
+
         return prompt, json_data
