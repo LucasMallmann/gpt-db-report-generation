@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>GPT Llamaindex</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <style>
+    .container {
+      margin-top: 100px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 10px;
+    }
+
+    input[type=checkbox] {
+      margin-right: 5px;
+    }
+  </style>
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@2.7.14/dist/vue.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="col-md-8 col-md-offset-2" v-if="view === 'index'">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">GPT SQL Query</h3>
+        </div>
+        <div class="panel-body">
+          <fieldset>
+            <div class="form-group">
+              <textarea class="form-control" v-model="query" placeholder="Enter text request to generate SQL query"
+                rows="5" name="query" type="text"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="temp">OpenAI Query Temperature ([[temp]])*:</label>
+              <input type="range" class="form-control-range" name="temp" id="temp" min="0.1" v-model="temp" max="1"
+                step="0.1" value="0.1">
+            </div>
+            <div v-if="!isLoading">
+              <div class="row">
+                <div class="col-md-6">
+                  <button class="btn btn-lg btn-primary btn-block" type="submit" @click="generate">
+                    🔎 Search!
+                  </button>
+                </div>
+                <div class="col-md-6">
+                  <button class="btn btn-lg btn-danger btn-block" type="submit" @click="generateRandom">
+                    🚀 Generate
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else>
+              <button class="btn btn-lg btn-primary btn-block" type="button" disabled>
+                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                Loading...
+              </button>
+            </div>
+          </fieldset>
+          <!-- small prompt  -->
+          <div class="panel-footer" style="margin-top: 20px; border-radius: 5px;">
+            <p>SQL Structure (select tables to use to generate query):</p>
+            <small class="text-muted">
+              <!-- each  -->
+
+              <ul>
+                <li v-for="(item, index) in databaseTables" :key="index">
+                  <label>
+                    <input type="checkbox" v-model="checkedItems" :value="item" />
+                    <strong>[[ Object.keys(item)[0] ]]:</strong>
+                    <span v-for="(column, i) in item[Object.keys(item)[0]]"> [[column]] -</span>
+                  </label>
+                </li>
+              </ul>
+
+
+              <button type="button" class="btn btn-default btn-sm">
+                <span class="glyphicon glyphicon-check"></span> Select All
+              </button>
+              <button type="button" class="btn btn-default btn-sm">
+                <span class="glyphicon glyphicon-unchecked"></span> Deselect All
+              </button>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue -->
+  <script>
+    var app = new Vue({
+      el: '#app',
+      delimiters: ['[[', ']]'],
+      data: {
+        view: 'index',
+        query: '',
+        temp: 0.1,
+        isLoading: false,
+        schema: {
+          // Define your schema here
+        },
+        databaseTables: JSON.parse('{{database_tables|safe}}'),
+        checkedItems: []
+      },
+
+      methods: {
+        generate() {
+          // Function to execute when the "Search!" button is clicked
+          console.log("Clicked on generate ", this.databaseTables)
+
+          this.checkedItems.map(item => console.log('item is ', item))
+        },
+        generateRandom() {
+          // Function to execute when
+          console.log("Clicked on generate random")
+        },
+      }
+    });
+  </script>
+
+</body>
+
+</html>

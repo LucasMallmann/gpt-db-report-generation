@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text, MetaData
+from sqlalchemy import create_engine, text, MetaData, inspect
 from sqlalchemy.orm import sessionmaker
 
 
@@ -11,6 +11,11 @@ class Database:
 
     def get_tables(self):
         return list(self.metadata.tables.keys())
+
+    def get_columns(self, tabl_name: str):
+        inspector = inspect(self.engine)
+        columns = inspector.get_columns(tabl_name)
+        return [column['name'] for column in columns]
 
     def execute_query(self, query: str):
         with self.Session() as session:
