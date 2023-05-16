@@ -7,5 +7,5 @@ mysql-connector-python-rf==2.2.2
 python-dotenv==1.0.0
 flask==2.2.2
 SQLAlchemy==2.0.12
-llama-index==0.6.2
+llama-index==0.6.8
 transformers==4.28.1
